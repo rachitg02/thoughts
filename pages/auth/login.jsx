@@ -2,10 +2,14 @@ import {FcGoogle} from 'react-icons/fc'
 import {signInWithPopup, GoogleAuthProvider} from 'firebase/auth'
 import {auth} from '../../utils/firebase'
 import { useRouter } from 'next/router';
+import {useAuthState} from 'react-firebase-hooks/auth'
+import { useEffect } from 'react';
 
 export default function Login() {
     const route= useRouter()
     const googleProvider = new GoogleAuthProvider();
+    const [user,loading] = useAuthState(auth)
+
     const GoogleLogin = async () => {
         try {
             const result = await signInWithPopup(auth,googleProvider)
@@ -14,10 +18,16 @@ export default function Login() {
             console.log(error)
         }
     }
-    
+
+    useEffect(()=>{
+        if(user){
+            route.push('/')
+        }
+        else console.log("login")
+        },[user])
     
     return (
-        <div className="w-2/3 mx-auto shadow-xl border-b-4 border-l-4 border-gray-300/50 mt-32 p-10 rounded-2xl">
+        <div className="bg-gray-100/50 max-w-md mx-auto shadow-xl border-b-4 border-l-4 border-gray-300/50 mt-32 p-10 rounded-2xl">
             <h2 className="text-2xl font-semibold mb-6"
             >Login</h2>
             <div>
