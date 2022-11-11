@@ -2,12 +2,13 @@ import {auth, db} from "../utils/firebase"
 import { useAuthState } from "react-firebase-hooks/auth"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { doc, addDoc, collection, serverTimestamp, updateDoc } from "firebase/firestore";
 import {toast} from 'react-toastify'
 
 export default function Dashboard() {
     const [user,loading]= useAuthState(auth)
     const route = useRouter();
+    const updateData = route.query;
     const [post,setPost] = useState({text:""})
     const submitPost=async (e) =>{
         e.preventDefault();
@@ -22,6 +23,14 @@ export default function Dashboard() {
         return
        }
 
+       if(post?.hasOwnProperty('id')) {
+        const docRef = doc(db,'posts',post.id)
+        const updatedPost = {...post,timestamp:serverTimestamp()}
+        await updateDoc(docRef,updatedPost)
+        toast.success('Post Edited')
+        return route.push('/')
+       }
+       else {
         const collectionRef = collection(db,'posts')
         await addDoc(collectionRef,{
             ...post,
@@ -31,21 +40,26 @@ export default function Dashboard() {
             username: user.displayName,
         })
         setPost({text:""})
+        toast.success('Post Submited')
         route.push('/')
+       }
     }
-        const getData = async ()=>{
+        const checkUser = async ()=>{
         if(loading) return;
         if(!user) return route.push("/auth/login")
+        if(updateData.id){
+            setPost({text: updateData.text, id:updateData.id})
+        }
     }
 
     useEffect(()=>{
-        getData();
+        checkUser();
     },[user,loading])
     return (
         <div className="mt-32 p-12 shadow-lg bg-gray-100/50 border-b-4 border-l-4 border-gray-300/50 rounded-2xl max-w-md mx-auto">
             <form onSubmit={submitPost}>
                 <h1 className="text-xl font-semibold"
-                >Share your thoughts</h1>
+                >{post.hasOwnProperty('id')? 'Edit your post':'Share your thoughts'}</h1>
                 <div className="py-2">
                     <textarea 
                     value={post.text} 
